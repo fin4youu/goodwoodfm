@@ -1,5 +1,3 @@
-import axios from 'axios';
-
 export default async function handler(req: any, res: any) {
   try {
      const url = 'https://radio.finwuh.uk';
@@ -16,23 +14,28 @@ export default async function handler(req: any, res: any) {
          });
      }
 
-     const response = await axios.get(`${url}/api/station/${stationId}/streamers`, {
+     const response = await fetch(`${url}/api/station/${stationId}/streamers`, {
          headers: {
              'X-API-Key': apiKey
          }
      });
 
-     res.status(200).json({ configured: true, streamers: response.data, serverUrl: url, stationId });
+     if (!response.ok) {
+         if (response.status === 404) {
+             return res.status(200).json({ 
+                 configured: true, 
+                 streamers: [],
+                 serverUrl: 'https://radio.finwuh.uk',
+                 stationId: '1',
+                 message: 'API Key active but Streamers endpoint failed (404).'
+             });
+         }
+         throw new Error(`HTTP error! status: ${response.status}`);
+     }
+
+     const data = await response.json();
+     res.status(200).json({ configured: true, streamers: data, serverUrl: url, stationId });
   } catch (err: any) {
-      if (err.response && err.response.status === 404) {
-          return res.status(200).json({ 
-             configured: true, 
-             streamers: [],
-             serverUrl: 'https://radio.finwuh.uk',
-             stationId: '1',
-             message: 'API Key active but Streamers endpoint failed (404).'
-          });
-      }
       console.error('Error fetching from Azuracast:', err.message);
       res.status(500).json({ error: 'Failed to connect to AzuraCast' });
   }
