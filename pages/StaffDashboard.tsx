@@ -309,19 +309,27 @@ export const StaffDashboard = () => {
     const handleFetchFromUrl = async () => {
         if (!articleForm.url) return;
         try {
-            const res = await fetch('/api/fetch-article-metadata', {
-                method: 'POST',
-                headers: { 'Content-Type': 'application/json' },
-                body: JSON.stringify({ url: articleForm.url })
-            });
+            const res = await fetch(`https://api.allorigins.win/get?url=${encodeURIComponent(articleForm.url)}`);
             const data = await res.json();
-            if (data.title) {
-                setArticleForm(prev => ({
-                    ...prev,
-                    title: data.title || prev.title,
-                    image: data.image || prev.image,
-                    summary: data.description || prev.summary
-                }));
+            
+            if (data.contents) {
+                const doc = new DOMParser().parseFromString(data.contents, "text/html");
+                const titleMeta = doc.querySelector('meta[property="og:title"]') || doc.querySelector('title');
+                const imageMeta = doc.querySelector('meta[property="og:image"]');
+                const descMeta = doc.querySelector('meta[property="og:description"]') || doc.querySelector('meta[name="description"]');
+                
+                const title = titleMeta ? (titleMeta.getAttribute('content') || titleMeta.textContent || '') : '';
+                const image = imageMeta ? (imageMeta.getAttribute('content') || '') : '';
+                const description = descMeta ? (descMeta.getAttribute('content') || '') : '';
+
+                if (title) {
+                    setArticleForm(prev => ({
+                        ...prev,
+                        title: title || prev.title,
+                        image: image || prev.image,
+                        summary: description || prev.summary
+                    }));
+                }
             }
         } catch (err) {
             console.error("Failed to fetch article metadata", err);
