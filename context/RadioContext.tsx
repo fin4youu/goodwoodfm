@@ -58,7 +58,7 @@ export const RadioProvider: React.FC<{ children: React.ReactNode }> = ({ childre
 
     const fetchRadioData = async () => {
       try {
-        const response = await fetch('https://radio.finwuh.uk/api/nowplaying/1');
+        const response = await fetch('/api/azuracast/nowplaying');
         const data = await response.json();
         
         if (data && data.now_playing) {
